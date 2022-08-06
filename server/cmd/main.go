@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/faysal146/golang-vue-http-crud-app/server/server"
 
 func main() {
-	fmt.Println("golang app")
+	server.StartServer()
 }
