@@ -13,6 +13,6 @@ func RespondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	w.Write(response)
 }
 
-func RespondWithError(w http.ResponseWriter, code int, message string) {
-	RespondWithJSON(w, code, map[string]string{"error": message})
+func RespondWithError(w http.ResponseWriter, code int, message interface{}) {
+	RespondWithJSON(w, code, map[string]interface{}{"error": message})
 }
