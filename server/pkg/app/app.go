@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/model"
 	"github.com/gorilla/mux"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,6 +36,12 @@ func (a *App) Initialize(user, password, dbname string) {
 		os.Exit(1)
 	} else {
 		fmt.Println("database connected...")
+	}
+	// Migrate database
+	if userDBMigErr := model.MigrateUser(a.DB); userDBMigErr != nil {
+		log.Fatal("user database Migrate fail ", err)
+	} else {
+		fmt.Println("user database Migrate successfully")
 	}
 
 	a.Router = mux.NewRouter()
