@@ -1,14 +1,24 @@
 package routes
 
 import (
-	"net/http"
-
 	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/controllers"
-	"github.com/gorilla/mux"
+	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/middleware"
+	"github.com/gofiber/fiber/v2"
 )
 
-func InitializeRoutes(r *mux.Router) {
-	s := r.PathPrefix("/api/v1").Subrouter()
-	s.HandleFunc("/auth/login", controllers.LoginUser).Methods(http.MethodPost)
-	s.HandleFunc("/auth/register", controllers.RegisterUser).Methods(http.MethodPost)
+func InitializeRoutes(r fiber.Router) {
+	// check it's content type json or not
+	r.Use(func(c *fiber.Ctx) error {
+		if c.GetReqHeaders()["Content-Type"] != "application/json" {
+			return fiber.NewError(fiber.StatusUnsupportedMediaType, "Content Type is not application/json")
+		} else {
+			return c.Next()
+		}
+	})
+	authRoute := r.Group("/auth")
+	authRoute.Post("/login", controllers.LoginUser)
+	authRoute.Post("/register", controllers.RegisterUser)
+	authRoute.Get("/user", middleware.AuthenticationMiddleware, func(c *fiber.Ctx) error {
+		return c.JSON(c.Locals("UserData"))
+	})
 }
