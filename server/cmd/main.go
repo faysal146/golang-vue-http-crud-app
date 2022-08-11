@@ -22,5 +22,5 @@ func main() {
 		os.Getenv("DB_NAME"),
 	)
 	// start server
-	app.Run(fmt.Sprintf(":%v", os.Getenv("PORT")))
+	app.Run(fmt.Sprintf("127.0.0.1:%v", os.Getenv("PORT")))
 }
