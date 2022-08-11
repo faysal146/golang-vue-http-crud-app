@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 
@@ -9,20 +8,14 @@ import (
 	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/helpers"
 	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/model"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2"
 )
 
-func RegisterUser(w http.ResponseWriter, r *http.Request) {
-	// check it's content type json or not
-	headerContentTtype := r.Header.Get("Content-Type")
-	if headerContentTtype != "application/json" {
-		// response error
-		helpers.RespondWithError(w, http.StatusUnsupportedMediaType, "Content Type is not application/json")
-		return
+func RegisterUser(c *fiber.Ctx) error {
+	var bodyData = new(model.RegisterBody)
+	if parseErr := c.BodyParser(bodyData); parseErr != nil {
+		return fiber.NewError(http.StatusBadRequest, "invalid body")
 	}
-	var bodyData model.RegisterBody
-	// convert req body data into json
-	json.NewDecoder(r.Body).Decode(&bodyData)
-	// validate req body data
 	validationErr := validator.New().Struct(bodyData)
 	if validationErr != nil {
 		// custom error messages customValidationErr{ email: "invalid email", .... }
@@ -34,7 +27,7 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 			customValidationErr[key] = msg
 		}
 		// response back with error message
-		helpers.RespondWithError(w, http.StatusBadRequest, customValidationErr)
+		return c.Status(http.StatusBadRequest).JSON(customValidationErr)
 	} else {
 		/*
 			 	* check if user already exist
@@ -46,8 +39,8 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 		var userExist bool
 		database.DBClient.Model(&model.User{}).Where("email = ?", strings.ToLower(bodyData.Email)).Or("username = ?", bodyData.Username).Find(&userExist)
 
-		if !userExist {
-			helpers.RespondWithError(w, http.StatusBadRequest, "email or username already exist")
+		if userExist {
+			return fiber.NewError(http.StatusForbidden, "user already exist")
 		} else {
 			var userData = model.User{
 				FirstName: bodyData.FirstName,
@@ -63,23 +56,18 @@ func RegisterUser(w http.ResponseWriter, r *http.Request) {
 			userData.Token = authToken
 			userData.RefreshToken = refreshToken
 			database.DBClient.Model(&userData).Updates(model.User{Token: authToken, RefreshToken: refreshToken}).Where("id = ?", userData.ID)
-			helpers.RespondWithJSON(w, http.StatusCreated, userData)
+			return c.Status(fiber.StatusCreated).JSON(userData)
 		}
 	}
 }
 
-func LoginUser(w http.ResponseWriter, r *http.Request) {
-	// check content type
-	headerContentTtype := r.Header.Get("Content-Type")
-	if headerContentTtype != "application/json" {
-		// response error
-		helpers.RespondWithError(w, http.StatusUnsupportedMediaType, "Content Type is not application/json")
-		return
-	}
+func LoginUser(c *fiber.Ctx) error {
 	// login either username or email and password
-	var loginBody model.LoginBody
-	// decode body data
-	json.NewDecoder(r.Body).Decode(&loginBody)
+
+	var loginBody = new(model.LoginBody)
+	if parseErr := c.BodyParser(loginBody); parseErr != nil {
+		return fiber.NewError(http.StatusBadRequest, "invalid body")
+	}
 	// validate email and password
 	validationErr := validator.New().Struct(loginBody)
 	if validationErr != nil {
@@ -92,7 +80,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 			customValidationErr[key] = msg
 		}
 		// response back with error message
-		helpers.RespondWithError(w, http.StatusBadRequest, customValidationErr)
+		return c.Status(http.StatusBadRequest).JSON(customValidationErr)
 	} else {
 		var userdata model.User
 		// file format correct
@@ -107,17 +95,20 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 				// password match
 				authToken, refreshToken := helpers.GenerateAuthToken(userdata.ID, userdata.Email)
 				// update token on database
-				database.DBClient.Model(&userdata).Updates(model.User{Token: authToken, RefreshToken: refreshToken}).Where("id = ?", userdata.ID)
+				err := database.DBClient.Model(&userdata).Updates(model.User{Token: authToken, RefreshToken: refreshToken}).Where("id = ?", userdata.ID).Error
+				if err != nil {
+					return fiber.NewError(http.StatusInternalServerError, "internal server error")
+				}
 				userdata.Token = authToken
 				userdata.RefreshToken = refreshToken
-				helpers.RespondWithJSON(w, http.StatusOK, userdata)
+				return c.Status(fiber.StatusOK).JSON(userdata)
 			} else {
 				// password don't match
-				helpers.RespondWithError(w, http.StatusBadRequest, "incorrect password")
+				return fiber.NewError(http.StatusUnauthorized, "invalid password")
 			}
 		} else {
 			// user not found
-			helpers.RespondWithError(w, http.StatusForbidden, "user not found")
+			return fiber.NewError(http.StatusForbidden, "user not found")
 		}
 	}
 }
