@@ -1,8 +1,10 @@
 package model
 
 import (
+	"strings"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -37,4 +39,22 @@ type RegisterBody struct {
 
 func MigrateUser(db *gorm.DB) error {
 	return db.AutoMigrate(&User{})
+}
+
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	// make email address small letter
+	u.Email = strings.ToLower(u.Email)
+	u.Password = u.HashPassword(u.Password)
+	// hash password
+	return
+}
+
+func (u *User) HashPassword(p string) string {
+	passwordByte, _ := bcrypt.GenerateFromPassword([]byte(p), 8)
+	return string(passwordByte)
+}
+
+func (u *User) VerifyPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
 }
