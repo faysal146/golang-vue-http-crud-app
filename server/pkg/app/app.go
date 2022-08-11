@@ -2,20 +2,25 @@ package app
 
 import (
 	"fmt"
-	"log"
-	"net/http"
 
+	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/helpers"
 	"github.com/faysal146/golang-vue-http-crud-app/server/pkg/routes"
-	"github.com/gorilla/mux"
+	"github.com/gofiber/fiber/v2"
 )
 
 func Run(addr string) {
-	router := mux.NewRouter()
+	app := fiber.New(fiber.Config{
+		ErrorHandler: helpers.DefaultErrorHandler,
+	})
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.JSON(app.Stack())
+	})
+	router := app.Group("/api/v1")
 	routes.InitializeRoutes(router)
+
 	fmt.Println("server running on port ", addr)
-	err := http.ListenAndServe(addr, router)
-	if err != nil {
-		fmt.Println("server could not running...")
-		log.Fatal(err)
+	if err := app.Listen(addr); err != nil {
+		fmt.Println("could not start server: ")
+		panic(err)
 	}
 }
