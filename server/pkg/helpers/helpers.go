@@ -6,10 +6,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func VerifyPassword(hashPassword, textPassword string) bool {
-	return false
-}
-
 func GetValidationMessage(fe validator.FieldError) (key string, msg string) {
 	switch fe.Tag() {
 	case "required":
