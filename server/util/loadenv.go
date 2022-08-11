@@ -10,7 +10,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-var EnvKeys = []string{"DB_USER_NAME", "DB_PASSWORD", "DB_NAME", "PORT"}
+var EnvKeys = []string{"DB_USER_NAME", "DB_PASSWORD", "DB_NAME", "PORT", "JWT_SECRETKEY"}
 
 func LoadEnv(envKeys []string) {
 	_, filename, _, ok := runtime.Caller(0)
