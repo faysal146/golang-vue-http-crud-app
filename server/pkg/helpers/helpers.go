@@ -6,10 +6,6 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func HashPassword(p string) string {
-	return ""
-}
-
 func VerifyPassword(hashPassword, textPassword string) bool {
 	return false
 }
