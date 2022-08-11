@@ -45,6 +45,7 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 	// make email address small letter
 	u.Email = strings.ToLower(u.Email)
 	u.Password = u.HashPassword(u.Password)
+	u.PasswordUpdatedAt = time.Now().Local()
 	// hash password
 	return
 }
