@@ -18,7 +18,5 @@ func InitializeRoutes(r fiber.Router) {
 	authRoute := r.Group("/auth")
 	authRoute.Post("/login", controllers.LoginUser)
 	authRoute.Post("/register", controllers.RegisterUser)
-	authRoute.Get("/user", middleware.AuthenticationMiddleware, func(c *fiber.Ctx) error {
-		return c.JSON(c.Locals("UserData"))
-	})
+	authRoute.Post("/refresh-token", middleware.AuthenticationMiddleware, controllers.RefreshToken)
 }

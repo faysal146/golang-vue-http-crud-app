@@ -112,3 +112,23 @@ func LoginUser(c *fiber.Ctx) error {
 		}
 	}
 }
+
+func RefreshToken(c *fiber.Ctx) error {
+	var tokenFormBody = struct {
+		Token string `json:"token"`
+	}{}
+	if parseErr := c.BodyParser(&tokenFormBody); parseErr != nil {
+		return fiber.NewError(http.StatusBadRequest, "invalid req body. token is required")
+	}
+	if helpers.IsTokenValid(tokenFormBody.Token) {
+		if err := helpers.VerifyRefreshToken(tokenFormBody.Token); err != nil {
+			return fiber.NewError(http.StatusBadRequest, "invalid token")
+		} else {
+			userdata := c.Locals("UserData").(model.User)
+			authToken, refreshToken := helpers.GenerateAuthToken(userdata.ID, userdata.Email)
+			return c.Status(fiber.StatusOK).JSON(map[string]string{"token": authToken, "refresh_token": refreshToken})
+		}
+	} else {
+		return fiber.NewError(http.StatusBadRequest, "invalid token")
+	}
+}
