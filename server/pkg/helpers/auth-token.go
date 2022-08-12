@@ -72,3 +72,11 @@ func VerifyToken(token string) (payload *JWTClaim, err error) {
 	}
 	return claims, nil
 }
+
+func VerifyRefreshToken(rt string) error {
+	_, err := VerifyToken(rt)
+	if err != nil {
+		return errors.New("invalid refresh token")
+	}
+	return nil
+}
