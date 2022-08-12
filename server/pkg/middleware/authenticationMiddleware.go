@@ -18,7 +18,7 @@ func AuthenticationMiddleware(c *fiber.Ctx) error {
 	// check authorization header
 
 	if authorizationHeader == "" {
-		return fiber.NewError(http.StatusUnauthorized, "token not found")
+		return fiber.NewError(http.StatusUnauthorized, "token not found. unauthorized!")
 	}
 	tokenString := strings.Replace(authorizationHeader, "Bearer ", "", -1)
 
@@ -26,7 +26,7 @@ func AuthenticationMiddleware(c *fiber.Ctx) error {
 		// token format valid
 		tokenPayload, tokenErr := helpers.VerifyToken(tokenString)
 		if tokenErr != nil {
-			return fiber.NewError(http.StatusUnauthorized, "unauthorized")
+			return fiber.NewError(http.StatusUnauthorized, "unauthorized!")
 		} else {
 			var userData model.User
 			// check if user exist in the database
@@ -35,7 +35,7 @@ func AuthenticationMiddleware(c *fiber.Ctx) error {
 				// check is user change password after token generated
 				if userData.PasswordUpdatedAt.Add(-time.Microsecond*100).Local().Unix() > tokenPayload.IssuedAt {
 					// password change
-					return fiber.NewError(http.StatusUnauthorized, "password change, please login again")
+					return fiber.NewError(http.StatusUnauthorized, "password change, please login again. unauthorized!")
 				} else {
 					// everything is ok
 					c.Locals("UserData", userData)
@@ -43,10 +43,10 @@ func AuthenticationMiddleware(c *fiber.Ctx) error {
 					return c.Next()
 				}
 			} else {
-				return fiber.NewError(http.StatusUnauthorized, "user not found")
+				return fiber.NewError(http.StatusUnauthorized, "user not found. unauthorized!")
 			}
 		}
 	} else {
-		return fiber.NewError(http.StatusUnauthorized, "invalid token / token not found")
+		return fiber.NewError(http.StatusUnauthorized, "invalid token / token not found. unauthorized!")
 	}
 }
